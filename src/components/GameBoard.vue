@@ -1,112 +1,169 @@
 <script setup lang="ts">
-// Import funkcji reaktywnych z Vue
 import { ref, computed } from 'vue'
 import { useGameStore } from '@/stores/GameStore'
 import GameInfo from './GameInfo.vue'
 import DiceRoller from './DiceRoller.vue'
 import GameLegend from './GameLegend.vue'
 import BoardGrid from './BoardGrid.vue'
+import RoundScores from './RoundScores.vue'
+import GameStartModal from './GameStartModal.vue'
 
 /* ============================================
    DEFINICJE TYPÓW I INTERFEJSÓW
    ============================================ */
 
-// Typ definiujący możliwe rodzaje pól na planszy
-type CellType = 'empty' | 'house' | 'forest' | 'lake' | 'square'
+type CellType = 'empty' | 'house' | 'forest' | 'lake' | 'square' | 'factory'
 
-// Interfejs opisujący pojedynczą komórkę planszy
 interface Cell {
-  type: CellType    // Rodzaj pola (puste, dom, las, staw, plac)
-  points: number    // Punkty zdobyte za to pole (na przyszłość)
+  type: CellType
+  points: number
+  occupied: boolean
 }
 
 /* ============================================
-   STAN GRY - ZMIENNE REAKTYWNE
+   STAN GRY - STORE PINIA
    ============================================ */
 
-// Rozmiar planszy - 6 kolumn (dla kostek 1-6) i 5 wierszy (dla sum kostek)
-const boardSizeColumns = 6  // Liczba kolumn (kostki mają 6 ścianek)
-const boardSizeRows = 5     // Liczba wierszy (5 grup sum kostek)
+const game = useGameStore()
 
-// Dwuwymiarowa tablica reprezentująca planszę gry
-// ref() tworzy reaktywną zmienną - Vue automatycznie śledzi zmiany
-// Array.from() tworzy tablicę 5x6 wypełnioną pustymi polami
-const board = ref<Cell[][]>(
-  Array.from({ length: boardSizeRows }, () =>           // Tworzy 5 wierszy
-    Array.from({ length: boardSizeColumns }, () => ({   // W każdym wierszu 6 kolumn
-      type: 'empty' as CellType,                        // Początkowy typ: puste pole
-      points: 0                                          // Początkowe punkty: 0
-    }))
-  )
-)
+// NOWE: Inicjalizacja gracza przy starcie
+if (game.players.length === 0) {
+  game.addPlayer('Gracz 1')
+}
+
+// NOWE: Stan dla modala startowego
+const showStartModal = ref(true)
+
+// Rozmiar planszy
+const boardSizeColumns = 6
+const boardSizeRows = 5
+
+// ZMIANA: Plansza pochodzi ze store (board gracza)
+const board = computed(() => {
+  if (game.players.length > 0) {
+    return game.players[0]!.board
+  }
+  return [] as Cell[][]
+})
 
 // Definicja nagłówków wierszy z sumami kostek
-// Każdy wiersz odpowiada konkretnym sumom wyrzuconych kostek
 const rowLabels = ['3,4', '5,6', '7', '8,9', '10,11']
 
 // Tablica punktów dla każdego wiersza
-// Zgodnie z obrazkiem: wiersze dają kolejno 3, 1, 3, 1, 3 punkty
 const rowPoints = [3, 1, 3, 1, 3]
 
-// --- Stan globalny (Pinia) ---
-const game = useGameStore()
-
-// Wygodne computed do przekazywania do komponentów prezentacyjnych
+// Wygodne computed do przekazywania do komponentów
 const dice1 = computed(() => game.dice1)
 const dice2 = computed(() => game.dice2)
 const currentRound = computed(() => game.currentRound)
 const totalScore = computed(() => game.totalScore)
-
-/* ============================================
-   COMPUTED - WARTOŚCI OBLICZANE AUTOMATYCZNIE
-   ============================================ */
-
-// Suma wartości obu kostek (określa wiersz do punktowania)
 const diceSum = computed(() => game.diceSum)
+const isPlanning = computed(() => game.isPlanning)
+const canProceed = computed(() => game.canProceedToNextRound)
+const selectedProject = computed(() => game.selectedProject)
+const tempChanges = computed(() => game.tempChanges)
+const roundScores = computed(() => game.roundScores)
+const usedBonusRounds = computed(() => game.usedBonusRounds)
+const canRollDice = computed(() => game.canRollDice)
+const changesCommitted = computed(() => game.changesCommitted)
+const diceRolledThisRound = computed(() => game.diceRolledThisRound) // NOWE
 
 /* ============================================
   FUNKCJE - LOGIKA GRY
   ============================================ */
 
+// NOWE: Rozpoczęcie gry (przejście z modala startowego)
+const startGame = () => {
+  game.startGame()
+  showStartModal.value = false
+}
+
 // Funkcje wywołujące akcje ze store'a
-const rollDice = () => game.rollDice()
+const rollDice = () => {
+  if (canRollDice.value) {
+    game.rollDice()
+  }
+}
 
-// (opcjonalnie) mapowanie kostki na typ budynku będzie zaimplementowane później
-
-// Funkcja obsługująca kliknięcie w pole planszy
-// row: numer wiersza (0-4)
-// col: numer kolumny (0-5)
+// ZMIANA: Kliknięcie w pole - umieszczenie tymczasowe
 const handleCellClick = (row: number, col: number) => {
-  // Sprawdź czy wartości są zdefiniowane i pole nie jest już zajęte
-  const boardRow = board.value[row];
-  if (!boardRow) return;
-  const cell = boardRow[col];
-  if (!cell || cell.type !== 'empty') return
+  // NOWE: Blokuj kliknięcia jeśli nie rzucono kostek
+  if (!diceRolledThisRound.value) {
+    console.log('Musisz najpierw rzucić kostkami!')
+    return
+  }
 
-  // Tutaj będzie logika stawiania budynków (do implementacji)
-  // Na razie tylko wypisujemy informację do konsoli
-  console.log(`Clicked: row ${row + 1}, col ${col + 1}`)
-  console.log(`Row label: ${rowLabels[row]}, Points: ${rowPoints[row]}`)
+  // NOWE: Blokuj kliknięcia na pole jeśli już zapisaliśmy zmiany
+  if (changesCommitted.value) {
+    console.log('Musisz przejść do następnej rundy aby postawiać nowe projekty!')
+    return
+  }
+
+  const cell = board.value[row]?.[col]
+  if (!cell) return
+
+  // Sprawdź czy pole jest już zajęte (nie tymczasowo)
+  if (cell.occupied && !tempChanges.value.some((c) => c.row === row && c.col === col)) {
+    console.log('To pole jest już zajęte!')
+    return
+  }
+
+  // Sprawdź czy wybrano projekt
+  if (!selectedProject.value || selectedProject.value === 'empty') {
+    console.log('Najpierw wybierz projekt z legendy!')
+    return
+  }
+
+  // Umieść projekt tymczasowo
+  game.placeProjectTemp(row, col)
+}
+
+// NOWE: Zapisanie zmian
+const saveChanges = () => {
+  game.saveChanges()
+}
+
+// NOWE: Usunięcie wszystkich tymczasowych zmian
+const clearChanges = () => {
+  game.clearTempChanges()
 }
 
 // Funkcja przechodzenia do następnej rundy
-const nextRound = () => game.nextRound(9)
+const nextRound = () => {
+  if (canProceed.value) {
+    game.nextRound(9)
+  }
+}
+
+// NOWE: Wybór projektu z legendy
+const selectProject = (projectType: CellType) => {
+  // NOWE: Blokuj wybór projektów jeśli już zapisaliśmy zmiany
+  if (changesCommitted.value) {
+    console.log('Nie możesz zmieniać projektów po zapisaniu!')
+    return
+  }
+  game.selectProject(projectType)
+}
 
 /* ============================================
    INICJALIZACJA
    ============================================ */
 
-// Pierwszy rzut kostkami przy starcie gry
-rollDice()
+// ZMIANA: Brak automatycznego rzutu - start od fazy planowania
 </script>
 
 <template>
+  <!-- NOWY: Modal startowy na środku ekranu -->
+  <GameStartModal v-if="showStartModal" @start-game="startGame" />
+
   <!-- Główny kontener gry -->
-  <div class="game-container">
+  <div v-else class="game-container">
     <!-- PANEL INFORMACYJNY (LEWA STRONA) -->
     <div class="info-panel">
-      <GameInfo :current-round="currentRound" :total-score="totalScore" />
+      <!-- ZMIANA: Wyświetlanie fazy planowania lub rundy -->
+      <GameInfo :current-round="currentRound" :total-score="totalScore" :is-planning="isPlanning" />
 
+      <!-- ZMIANA: Wyświetlaj DiceRoller zawsze -->
       <DiceRoller
         :dice1="dice1"
         :dice2="dice2"
@@ -114,9 +171,28 @@ rollDice()
         :current-round="currentRound"
         @roll="rollDice"
         @next="nextRound"
+        :can-proceed="canProceed"
+        :can-roll="canRollDice"
+        :is-planning="isPlanning"
       />
 
-      <GameLegend />
+      <!-- ZMIANA: Wyświetlaj legendę zawsze -->
+      <GameLegend
+        :selected-project="selectedProject"
+        :available-projects="game.availableProjects"
+        @select-project="selectProject"
+        :disabled="changesCommitted"
+      />
+
+      <!-- ZMIANA: Wyświetlaj przyciski akcji zawsze -->
+      <div class="action-buttons">
+        <button @click="saveChanges" class="btn-save" :disabled="tempChanges.length === 0">
+          Zapisz zmiany
+        </button>
+        <button @click="clearChanges" class="btn-clear" :disabled="tempChanges.length === 0">
+          Usuń wszystkie
+        </button>
+      </div>
     </div>
 
     <!-- PLANSZA GRY (PRAWA STRONA) -->
@@ -129,10 +205,69 @@ rollDice()
           :dice-sum="diceSum"
           :row-labels="rowLabels"
           :row-points="rowPoints"
+          :temp-changes="tempChanges"
+          :allowed-columns="game.allowedColumns"
           @cell-click="handleCellClick"
+          :is-changes-committed="changesCommitted"
+        />
+
+        <!-- ZMIANA: Wyświetlaj RoundScores zawsze -->
+        <RoundScores
+          :round-scores="roundScores"
+          :current-round="currentRound"
+          :used-bonus-rounds="usedBonusRounds"
+          :is-planning="isPlanning"
         />
       </div>
     </div>
   </div>
 </template>
 
+<style scoped>
+/* NOWE: Style dla przycisków akcji */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn-save,
+.btn-clear {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-save {
+  background: #4caf50;
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-save:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-clear {
+  background: #f44336;
+  color: white;
+}
+
+.btn-clear:hover:not(:disabled) {
+  background: #da190b;
+}
+
+.btn-clear:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+</style>

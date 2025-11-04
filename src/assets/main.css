@@ -276,6 +276,14 @@
   font-size: 2rem;
 }
 
+.cell.factory {
+  background: #bdbdbd;
+}
+
+.factory-icon {
+  font-size: 1.5rem;
+}
+
 /* ============================================
    RESPONSYWNOŚĆ
    ============================================ */
