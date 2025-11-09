@@ -1,0 +1,154 @@
+/* ============================================
+   UI ELEMENTS (DiceRoller, GameInfo, GameLegend, Modal, RoundScores, Actions)
+   Przeniesione ze stylów scoped komponentów
+   ============================================ */
+
+/* DiceRoller */
+.dice-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dice-container {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.dice {
+  width: 60px;
+  height: 60px;
+  background: white;
+  border: 2px solid #333;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dice-sum {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 1rem 0;
+}
+
+.btn-roll,
+.btn-next,
+.btn-save,
+.btn-clear,
+.btn-start {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-roll { background: #4caf50; color: white; }
+.btn-roll:hover:not(:disabled) { background: #45a049; }
+.btn-roll:disabled { background: #9e9e9e; cursor: not-allowed; opacity: 0.6; }
+
+.btn-next { background: #2196f3; color: white; }
+.btn-next:hover:not(:disabled) { background: #0b7dda; }
+.btn-next:disabled { background: #9e9e9e; cursor: not-allowed; opacity: 0.6; }
+
+.btn-save { background: #4caf50; color: white; }
+.btn-save:hover:not(:disabled) { background: #45a049; }
+.btn-save:disabled { background: #ccc; cursor: not-allowed; }
+
+.btn-clear { background: #f44336; color: white; }
+.btn-clear:hover:not(:disabled) { background: #da190b; }
+.btn-clear:disabled { background: #ccc; cursor: not-allowed; }
+
+.btn-start {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.btn-start:active { transform: translateY(0); }
+
+/* Action buttons container */
+.action-buttons { display: flex; flex-direction: column; gap: 0.5rem; }
+
+/* GameInfo */
+.info-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.info-section h2 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  text-align: center;
+}
+.info-section p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  text-align: center;
+  color: #555;
+}
+
+/* GameLegend */
+.legend { background: #f8f9fa; padding: 1.5rem; border-radius: 8px; transition: all 0.3s; }
+.legend.disabled { opacity: 0.4; pointer-events: none; }
+.legend h3 { margin: 0 0 1rem 0; }
+.legend-item { cursor: pointer; padding: 0.5rem; border-radius: 4px; transition: all 0.3s; display: flex; align-items: center; gap: 0.75rem; }
+.legend-item.available { background: #e8f5e9; }
+.legend-item.available:hover { background: #c8e6c9; transform: scale(1.05); }
+.legend-item.selected { background: #4caf50; color: white; font-weight: bold; }
+.legend-item.disabled { opacity: 0.4; cursor: not-allowed; }
+.icon { font-size: 1.5rem; }
+
+/* GameStartModal */
+.modal-overlay { position: fixed; top: 0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:1000; }
+.modal-content { background:white; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.3); padding:2rem; max-width:500px; width:90%; animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(50px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+.modal-header { text-align:center; margin-bottom:2rem; }
+.modal-header h1 { margin:0 0 0.5rem 0; color:#2c3e50; font-size:2rem; }
+.subtitle { margin:0; color:#7c8d9a; font-size:1.1rem; font-weight:bold; }
+.modal-body { margin-bottom:2rem; }
+.intro-text { font-size:1.2rem; font-weight:bold; color:#2c3e50; margin:0 0 1rem 0; text-align:center; }
+.description { color:#666; text-align:center; margin:0 0 1.5rem 0; }
+.game-rules { background:#f5f7fa; padding:1.5rem; border-radius:8px; border-left:4px solid #ff9800; }
+.game-rules h3 { margin:0 0 1rem 0; color:#2c3e50; font-size:1.1rem; }
+.game-rules ul { margin:0; padding-left:1.5rem; }
+.game-rules li { margin:0.5rem 0; color:#555; line-height:1.6; }
+.modal-footer { display:flex; justify-content:center; }
+
+/* RoundScores */
+.round-scores-container { margin-top:1.5rem; padding:1rem; background:white; border-radius:8px; }
+.round-scores-container h3 { margin-bottom:0.75rem; text-align:center; color:#2c3e50; }
+.round-scores { display:grid; grid-template-columns: repeat(9,1fr); gap:4px; margin-bottom:1rem; }
+.round-score { display:flex; flex-direction:column; align-items:center; padding:0.5rem; background:#f5f5f5; border-radius:4px; border:2px solid transparent; position:relative; min-height:60px; }
+.round-score.active { border-color:#2196f3; background:#e3f2fd; }
+.round-score.bonus { background:#fff3e0; }
+.round-score.bonus-used { background:#c8e6c9; }
+.round-score.planning-mode { opacity:0.5; background:#f0f0f0; }
+.round-number { font-size:0.75rem; font-weight:bold; color:#666; }
+.score-value { font-size:1.2rem; font-weight:bold; color:#333; }
+.bonus-star { position:absolute; top:2px; right:2px; font-size:0.9rem; }
+.current-score { text-align:center; padding:0.75rem; background:#4caf50; color:white; border-radius:4px; }
+.current-score h4 { margin:0 0 0.5rem 0; font-size:1rem; }
+.current-score .total { font-size:2rem; font-weight:bold; margin:0; }
+
+@media (max-width: 768px) {
+  .round-scores { grid-template-columns: repeat(9, 1fr); }
+}

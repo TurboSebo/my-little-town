@@ -34,9 +34,9 @@ if (game.players.length === 0) {
 // NOWE: Stan dla modala startowego
 const showStartModal = ref(true)
 
-// Rozmiar planszy
-const boardSizeColumns = 6
-const boardSizeRows = 5
+// Rozmiar planszy (możliwe użycie w przyszłości – na razie nieużywane)
+// const boardSizeColumns = 6
+// const boardSizeRows = 5
 
 // ZMIANA: Plansza pochodzi ze store (board gracza)
 const board = computed(() => {
@@ -223,51 +223,3 @@ const selectProject = (projectType: CellType) => {
   </div>
 </template>
 
-<style scoped>
-/* NOWE: Style dla przycisków akcji */
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.btn-save,
-.btn-clear {
-  width: 100%;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-save {
-  background: #4caf50;
-  color: white;
-}
-
-.btn-save:hover:not(:disabled) {
-  background: #45a049;
-}
-
-.btn-save:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.btn-clear {
-  background: #f44336;
-  color: white;
-}
-
-.btn-clear:hover:not(:disabled) {
-  background: #da190b;
-}
-
-.btn-clear:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-</style>

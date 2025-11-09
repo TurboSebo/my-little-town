@@ -46,3 +46,27 @@ npm run build
 ```sh
 npm run lint
 ```
+
+## CSS structure
+
+Styles are now global and split into three files under `src/assets/`:
+
+- `main.css` – app layout and general styles (reset, background, containers, responsiveness)
+- `ui.css` – UI elements: info panel, dice, action buttons, legend, start modal, round scores table
+- `board.css` – game board: grid, column/row headers, cells, and states (hover, highlight, temporary changes, locked)
+
+Imports are added in `src/main.ts` (order matters — `main.css` first, then UI and board):
+
+```ts
+import './assets/main.css'
+import './assets/ui.css'
+import './assets/board.css'
+```
+
+Note: styles used to be `scoped` inside components and were moved to global CSS. Class names are fairly specific (e.g., `.legend`, `.dice-section`, `.board-row`, `.cell`), but if you add new styles and notice name collisions, consider prefixing by component (e.g., `.legend-...`, `.dice-...`, `.board-...`) or using a BEM convention.
+
+Where to put new styles:
+
+- layout/general elements — `main.css`
+- UI (buttons, panels, modals, lists) — `ui.css`
+- board grid and cells — `board.css`
