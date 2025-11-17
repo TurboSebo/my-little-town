@@ -18,7 +18,12 @@ const props = defineProps<{
   rowLabels: string[]
   rowPoints: number[]
   tempChanges: { row: number; col: number; type: CellType }[]
-  allowedColumns: number[]
+  allowedPrimary: number[] // from store: primary columns
+  allowedAlt: number[] // alternative nearby columns
+  anyForSquare: boolean
+  isPlanning: boolean
+  isBonus: boolean // NOWE: Czy jesteśmy w fazie bonus
+  selectedProject: CellType | null // NOWE (Punkt 13): Wybrany projekt
   isChangesCommitted: boolean
 }>()
 
@@ -43,11 +48,28 @@ const getTempType = (row: number, col: number): CellType | null => {
   return change ? change.type : null
 }
 
-// NOWE: Sprawdzenie czy kolumna jest dozwolona
-// ZMIANA: Obsługujemy null dla kostek
+// Sprawdzenie czy kolumna jest dozwolona (uwzględnia primary i alternatywne)
 const isColumnAllowed = (col: number): boolean => {
-  if (props.allowedColumns.length === 0) return false
-  return props.allowedColumns.includes(col + 1)
+  const colNum = col + 1
+  // W fazie planowania wszystkie puste pola są dozwolone
+  if (props.isPlanning) {
+    return true
+  }
+
+  // W fazie bonus wszystkie puste pola są dozwolone
+  if (props.isBonus) {
+    return true
+  }
+
+  // PUNKT 13: Jeśli gracz NIE wybrał projektu, wszystkie kolumny są dozwolone (brak blokady)
+  if (!props.selectedProject || props.selectedProject === 'empty') {
+    return true
+  }
+
+  if (props.anyForSquare) return true
+  if (props.allowedPrimary && props.allowedPrimary.length > 0 && props.allowedPrimary.includes(colNum)) return true
+  if (props.allowedAlt && props.allowedAlt.length > 0 && props.allowedAlt.includes(colNum)) return true
+  return false
 }
 </script>
 
@@ -63,6 +85,7 @@ const isColumnAllowed = (col: number): boolean => {
         highlight:
           (props.dice1 !== null && props.dice1 === col) ||
           (props.dice2 !== null && props.dice2 === col),
+          'alt-highlight': props.allowedAlt && props.allowedAlt.includes(col),
       }"
     >
       {{ col }}
@@ -87,6 +110,7 @@ const isColumnAllowed = (col: number): boolean => {
           'col-highlight':
             (props.dice1 !== null && props.dice1 === colIndex + 1) ||
             (props.dice2 !== null && props.dice2 === colIndex + 1),
+          'alt-col': props.allowedAlt && props.allowedAlt.includes(colIndex + 1),
           'row-highlight': activeRowIndex === rowIndex,
           'temp-change': getTempType(rowIndex, colIndex) !== null,
           'col-disabled': !isColumnAllowed(colIndex),

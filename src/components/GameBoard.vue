@@ -59,7 +59,9 @@ const currentRound = computed(() => game.currentRound)
 const totalScore = computed(() => game.totalScore)
 const diceSum = computed(() => game.diceSum)
 const isPlanning = computed(() => game.isPlanning)
+const isBonus = computed(() => game.currentPhase === 'bonus') // NOWE
 const canProceed = computed(() => game.canProceedToNextRound)
+const canEnterBonus = computed(() => game.canEnterBonus) // PUNKT 16
 const selectedProject = computed(() => game.selectedProject)
 const tempChanges = computed(() => game.tempChanges)
 const roundScores = computed(() => game.roundScores)
@@ -85,15 +87,15 @@ const rollDice = () => {
   }
 }
 
-// ZMIANA: Kliknięcie w pole - umieszczenie tymczasowe
+// ZMIENA: Kliknięcie w pole - umieszczenie tymczasowe
 const handleCellClick = (row: number, col: number) => {
-  // NOWE: Blokuj kliknięcia jeśli nie rzucono kostek
-  if (!diceRolledThisRound.value) {
+  // W fazie planowania dozwolone bez rzutu kostkami
+  if (!isPlanning.value && !diceRolledThisRound.value) {
     console.log('Musisz najpierw rzucić kostkami!')
     return
   }
 
-  // NOWE: Blokuj kliknięcia na pole jeśli już zapisaliśmy zmiany
+  // Blokuj kliknięcia na pole jeśli już zapisaliśmy zmiany
   if (changesCommitted.value) {
     console.log('Musisz przejść do następnej rundy aby postawiać nowe projekty!')
     return
@@ -174,6 +176,8 @@ const selectProject = (projectType: CellType) => {
         :can-proceed="canProceed"
         :can-roll="canRollDice"
         :is-planning="isPlanning"
+        :is-bonus="isBonus"
+        :can-enter-bonus="canEnterBonus"
       />
 
       <!-- ZMIANA: Wyświetlaj legendę zawsze -->
@@ -182,6 +186,7 @@ const selectProject = (projectType: CellType) => {
         :available-projects="game.availableProjects"
         @select-project="selectProject"
         :disabled="changesCommitted"
+        :used-bonus-projects="game.usedBonusProjects"
       />
 
       <!-- ZMIANA: Wyświetlaj przyciski akcji zawsze -->
@@ -206,7 +211,12 @@ const selectProject = (projectType: CellType) => {
           :row-labels="rowLabels"
           :row-points="rowPoints"
           :temp-changes="tempChanges"
-          :allowed-columns="game.allowedColumns"
+          :allowed-primary="game.allowedColumns.primary"
+          :allowed-alt="game.allowedColumns.alt"
+          :any-for-square="game.allowedColumns.anyForSquare"
+          :is-planning="isPlanning"
+          :is-bonus="isBonus"
+          :selected-project="selectedProject"
           @cell-click="handleCellClick"
           :is-changes-committed="changesCommitted"
         />

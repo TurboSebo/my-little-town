@@ -8,6 +8,8 @@ const props = defineProps<{
   canProceed: boolean // Czy można przejść dalej
   canRoll: boolean // NOWE: Czy można rzucać
   isPlanning: boolean // NOWE: Czy jesteśmy w fazie planowania
+  isBonus: boolean // NOWE: Czy jesteśmy w fazie bonus
+  canEnterBonus: boolean // PUNKT 16: Czy można przejść do fazy bonus
 }>()
 
 const emit = defineEmits<{
@@ -35,15 +37,15 @@ const emit = defineEmits<{
       Rzuć kostkami
     </button>
     <!-- ZMIANA: Przycisk z ikoną kłódki gdy nie można przejść -->
-    <!-- ZMIANA: Zawsze wyświetlaj "Następna runda" zamiast zmiennego tekstu -->
+    <!-- PUNKT 16: W planning "Rozpocznij grę", gdy canEnterBonus "Faza bonusowa", w bonus "Następna runda", w innych "Następna runda" -->
     <button
       class="btn-next"
-      :class="{ locked: !props.canProceed }"
-      :disabled="props.currentRound >= 9 || !props.canProceed"
+      :class="{ locked: !props.canProceed && !props.canEnterBonus }"
+      :disabled="props.currentRound >= 9 || (!props.canProceed && !props.canEnterBonus)"
       @click="emit('next')"
     >
-      <span v-if="!props.canProceed">🔒</span>
-      Następna runda
+      <span v-if="!props.canProceed && !props.canEnterBonus">🔒</span>
+      {{ props.isPlanning ? 'Rozpocznij grę' : props.canEnterBonus ? 'Faza bonusowa' : 'Następna runda' }}
     </button>
   </div>
 </template>

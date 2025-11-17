@@ -6,6 +6,7 @@ const props = defineProps<{
   selectedProject: CellType | null
   availableProjects: CellType[]
   disabled: boolean // NOWE: Blokada legendy
+  usedBonusProjects?: Set<CellType>
 }>()
 
 const emit = defineEmits<{
@@ -33,7 +34,7 @@ const isAvailable = (projectType: CellType): boolean => {
       @click="!props.disabled && isAvailable('house') && emit('select-project', 'house')"
     >
       <span class="icon house-icon">🏠</span>
-      <span>Dom (1, 4)</span>
+        <span>Dom (1, 4) <span v-if="props.usedBonusProjects && props.usedBonusProjects.has('house')">⭐</span></span>
     </div>
 
     <div
@@ -46,7 +47,7 @@ const isAvailable = (projectType: CellType): boolean => {
       @click="!props.disabled && isAvailable('forest') && emit('select-project', 'forest')"
     >
       <span class="icon forest-icon">🌲</span>
-      <span>Las (2, 5)</span>
+      <span>Las (2, 5) <span v-if="props.usedBonusProjects && props.usedBonusProjects.has('forest')">⭐</span></span>
     </div>
 
     <div
@@ -59,7 +60,7 @@ const isAvailable = (projectType: CellType): boolean => {
       @click="!props.disabled && isAvailable('lake') && emit('select-project', 'lake')"
     >
       <span class="icon lake-icon">💧</span>
-      <span>Staw (3, 6)</span>
+      <span>Staw (3, 6) <span v-if="props.usedBonusProjects && props.usedBonusProjects.has('lake')">⭐</span></span>
     </div>
 
     <div

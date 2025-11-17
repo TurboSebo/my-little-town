@@ -33,6 +33,13 @@
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
 }
 
+/* Alternatywne kolumny (podświetlenie fioletowe LED) */
+.col-header.alt-highlight {
+  background: #e9d7ff;
+  box-shadow: 0 0 12px rgba(158, 89, 255, 0.6);
+  border: 2px solid #a463ff;
+}
+
 /* Wiersze planszy */
 .board-row {
   display: grid;
@@ -100,6 +107,12 @@
 
 .cell.row-highlight {
   background: #fff3cd;
+}
+
+/* Alternatywne kolumny - fioletowe podświetlenie */
+.cell.alt-col {
+  box-shadow: inset 0 0 8px rgba(164, 91, 255, 0.08);
+  border: 2px solid rgba(164, 91, 255, 0.35);
 }
 
 .cell.house {
