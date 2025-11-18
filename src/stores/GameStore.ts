@@ -696,10 +696,10 @@ export const useGameStore = defineStore('game', {
         // ZMIANA: Tworzenie planszy z punktami
         createEmptyBoard(): Cell[][] {
             const pointsGrid = [
-                [3, 3, 2, 2, 0, 3],
+                [3, 0, 2, 2, 0, 3],
                 [0, 1, 0, 0, 1, 0],
                 [2, 0, 1, 1, 0, 2],
-                [0, 0, 1, 0, 1, 0],
+                [0, 1, 0, 0, 1, 0],
                 [3, 0, 2, 2, 0, 3],
             ] as const
 
