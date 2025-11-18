@@ -9,7 +9,7 @@ interface Cell {
   occupied: boolean
 }
 
-// ZMIANA: Props teraz akceptują null
+// Props now accept null for dice values
 const props = defineProps<{
   board: Cell[][]
   dice1: number | null
@@ -22,8 +22,8 @@ const props = defineProps<{
   allowedAlt: number[] // alternative nearby columns
   anyForSquare: boolean
   isPlanning: boolean
-  isBonus: boolean // NOWE: Czy jesteśmy w fazie bonus
-  selectedProject: CellType | null // NOWE (Punkt 13): Wybrany projekt
+  isBonus: boolean // Are we in bonus phase
+  selectedProject: CellType | null // Selected project (Point 13)
   isChangesCommitted: boolean
 }>()
 
@@ -42,26 +42,26 @@ const getRowIndexFromSum = (sum: number): number => {
 
 const activeRowIndex = computed(() => getRowIndexFromSum(props.diceSum))
 
-// NOWE: Sprawdzenie czy pole ma tymczasową zmianę
+// Check if cell has a temporary change
 const getTempType = (row: number, col: number): CellType | null => {
   const change = props.tempChanges.find((c) => c.row === row && c.col === col)
   return change ? change.type : null
 }
 
-// Sprawdzenie czy kolumna jest dozwolona (uwzględnia primary i alternatywne)
+// Check if column is allowed (includes primary and alternative columns)
 const isColumnAllowed = (col: number): boolean => {
   const colNum = col + 1
-  // W fazie planowania wszystkie puste pola są dozwolone
+  // In planning phase, all empty cells are allowed
   if (props.isPlanning) {
     return true
   }
 
-  // W fazie bonus wszystkie puste pola są dozwolone
+  // In bonus phase, all empty cells are allowed
   if (props.isBonus) {
     return true
   }
 
-  // PUNKT 13: Jeśli gracz NIE wybrał projektu, wszystkie kolumny są dozwolone (brak blokady)
+  // Point 13: If player has NOT selected a project, all columns are allowed (no blocking)
   if (!props.selectedProject || props.selectedProject === 'empty') {
     return true
   }

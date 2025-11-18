@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-// NOWE TYPY: Dodano 'factory' do typu Cell
+// Cell types: added 'factory' to support project doubles feature
 export type CellType = 'empty' | 'house' | 'forest' | 'lake' | 'square' | 'factory'
 
 export interface GameState {
@@ -13,12 +13,19 @@ export interface GameState {
     tempChanges: { row: number; col: number; type: CellType }[]
     roundScores: number[]
     usedBonusRounds: Set<number>
-    // Ile projektów zapisano w bieżącej rundzie (po saveChanges)
+    // How many projects were saved in the current round (after saveChanges)
     placementsThisRound: number
-    // Jakie typy projektów bonusowych zostały już wykorzystane (house/forest/lake)
+    // Which bonus project types have been used (house/forest/lake)
     usedBonusProjects: Set<CellType>
     changesCommitted: boolean
     diceRolledThisRound: boolean
+    // End-game bonuses with detailed breakdown
+    finalBonuses: {
+        squares: number
+        factories: number
+        squareDetails: Array<{ row: number; col: number; points: number; reason: string }>
+        factoryDetails: Array<{ row: number; col: number; points: number; reason: string }>
+    }
 }
 
 export interface Player {
@@ -52,6 +59,12 @@ export const useGameStore = defineStore('game', {
         usedBonusProjects: new Set(),
         changesCommitted: false,
         diceRolledThisRound: false,
+        finalBonuses: {
+            squares: 0,
+            factories: 0,
+            squareDetails: [],
+            factoryDetails: [],
+        },
     }),
 
     actions: {
@@ -99,6 +112,34 @@ export const useGameStore = defineStore('game', {
                 this.usedBonusProjects = new Set()
                 console.log('🎮 Gra rozpoczęta! Faza planowania - rzuć kostkami aby rozpocząć.')
             }
+        },
+
+        // NOWE: Restart gry
+        restartGame() {
+            this.currentRound = 0
+            this.dice = [null, null]
+            this.currentPhase = 'planning'
+            this.totalScore = 0
+            this.selectedProject = null
+            this.tempChanges = []
+            this.roundScores = Array(9).fill(0)
+            this.usedBonusRounds = new Set()
+            this.placementsThisRound = 0
+            this.usedBonusProjects = new Set()
+            this.changesCommitted = false
+            this.diceRolledThisRound = false
+            this.finalBonuses = {
+                squares: 0,
+                factories: 0,
+                squareDetails: [],
+                factoryDetails: [],
+            }
+            // Reset planszy gracza
+            if (this.players.length > 0) {
+                this.players[0]!.board = this.createEmptyBoard()
+                this.players[0]!.score = 0
+            }
+            console.log('🔄 Gra zrestartowana. Witaj ponownie!')
         },
 
         // ZMIANA: Przejście do następnej rundy
@@ -365,46 +406,225 @@ export const useGameStore = defineStore('game', {
             }
         },
 
-        // NOWE: Obliczanie punktów za rundę
+        // NOWE: Obliczanie punktów za rundę z grupowaniem projektów
         calculateRoundScore() {
             if (this.players.length === 0 || this.currentRound === 0) return
+            if (this.dice[0] === null || this.dice[1] === null) return
 
             const player = this.players[0]!
-            let roundScore = 0
+            const diceSum = this.dice[0] + this.dice[1]
+            
+            // Mapowanie sumy kostek na indeks wiersza (punktowana ulica)
+            let scoredRowIndex = -1
+            if (diceSum === 3 || diceSum === 4) scoredRowIndex = 0
+            else if (diceSum === 5 || diceSum === 6) scoredRowIndex = 1
+            else if (diceSum === 7) scoredRowIndex = 2
+            else if (diceSum === 8 || diceSum === 9) scoredRowIndex = 3
+            else if (diceSum === 10 || diceSum === 11) scoredRowIndex = 4
 
-            player.board.forEach((row) => {
-                row.forEach((cell) => {
-                    if (cell.occupied && cell.type !== 'empty') {
+            if (scoredRowIndex === -1) return
+
+            let roundScore = 0
+            const grouped = new Set<string>() // "row,col"
+
+            // Funkcja BFS do grupowania projektów
+            const groupProjects = (startRow: number, startCol: number, projectType: CellType): number => {
+                const queue: [number, number][] = [[startRow, startCol]]
+                const visited = new Set<string>()
+                const key = `${startRow},${startCol}`
+                visited.add(key)
+                grouped.add(key)
+                
+                let groupPoints = 0
+                
+                while (queue.length > 0) {
+                    const [row, col] = queue.shift()!
+                    const cell = player.board[row]?.[col]
+                    
+                    if (cell && cell.type === projectType) {
+                        // Dodaj punkty tylko z pól mających punktację
+                        groupPoints += cell.points
+                        
+                        // Sprawdź sąsiadów N,S,E,W
+                        const neighbors: [number, number][] = [
+                            [row - 1, col], // N
+                            [row + 1, col], // S
+                            [row, col - 1], // W
+                            [row, col + 1], // E
+                        ]
+                        
+                        for (const [nRow, nCol] of neighbors) {
+                            const nKey = `${nRow},${nCol}`
+                            if (visited.has(nKey)) continue
+                            
+                            const neighbor = player.board[nRow]?.[nCol]
+                            if (neighbor && neighbor.type === projectType && neighbor.occupied) {
+                                visited.add(nKey)
+                                grouped.add(nKey)
+                                queue.push([nRow, nCol])
+                            }
+                        }
+                    }
+                }
+                
+                return groupPoints
+            }
+
+            // Przetwarzanie kolumn 1-6 w punktowanej ulicy
+            for (let col = 0; col < 6; col++) {
+                const cell = player.board[scoredRowIndex]?.[col]
+                const cellKey = `${scoredRowIndex},${col}`
+                
+                if (cell && cell.occupied && !grouped.has(cellKey)) {
+                    // Tylko projekty podstawowe kwalifikują się do grupowania
+                    if (cell.type === 'house' || cell.type === 'forest' || cell.type === 'lake') {
+                        const groupScore = groupProjects(scoredRowIndex, col, cell.type)
+                        roundScore += groupScore
+                    } else {
+                        // Inne typy (factory, square) - tylko punkty stałe
                         roundScore += cell.points
                     }
-                })
-            })
+                }
+            }
 
             this.roundScores[this.currentRound - 1] = roundScore
             this.totalScore = this.roundScores.reduce((sum, score) => sum + score, 0)
         },
 
-        // NOWE: Obliczanie końcowych punktów
+        // NOWE: Obliczanie końcowych punktów (place i fabryki)
         calculateFinalScore() {
             if (this.players.length === 0) return
 
             const player = this.players[0]!
 
-            let factoryBonus = 0
             let squareBonus = 0
+            let factoryBonus = 0
+            const squareDetails: Array<{ row: number; col: number; points: number; reason: string }> = []
+            const factoryDetails: Array<{ row: number; col: number; points: number; reason: string }> = []
 
-            player.board.forEach((row) => {
-                row.forEach((cell) => {
-                    if (cell.type === 'factory') {
-                        factoryBonus += 3
+            // Funkcja sprawdzająca sąsiadów N,S,E,W
+            const getNeighbors = (row: number, col: number): CellType[] => {
+                const neighbors: CellType[] = []
+                const positions: [number, number][] = [
+                    [row - 1, col], // N
+                    [row + 1, col], // S
+                    [row, col - 1], // W
+                    [row, col + 1], // E
+                ]
+                
+                for (const [r, c] of positions) {
+                    const cell = player.board[r]?.[c]
+                    if (cell && cell.occupied) {
+                        neighbors.push(cell.type)
                     }
+                }
+                
+                return neighbors
+            }
+
+            player.board.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    if (!cell.occupied) return
+
+                    // Punktowanie PLACU
                     if (cell.type === 'square') {
-                        squareBonus += 2
+                        const neighbors = getNeighbors(rowIndex, colIndex)
+                        const hasHouse = neighbors.includes('house')
+                        const hasForest = neighbors.includes('forest')
+                        const hasLake = neighbors.includes('lake')
+                        
+                        if (hasHouse && hasForest && hasLake) {
+                            squareBonus += 10
+                            squareDetails.push({
+                                row: rowIndex,
+                                col: colIndex,
+                                points: 10,
+                                reason: 'Sąsiaduje z domem, lasem i stawem'
+                            })
+                        } else {
+                            const missing: string[] = []
+                            if (!hasHouse) missing.push('dom')
+                            if (!hasForest) missing.push('las')
+                            if (!hasLake) missing.push('staw')
+                            squareDetails.push({
+                                row: rowIndex,
+                                col: colIndex,
+                                points: 0,
+                                reason: `Brak: ${missing.join(', ')}`
+                            })
+                        }
+                    }
+
+                    // Punktowanie FABRYKI
+                    if (cell.type === 'factory') {
+                        const neighbors = getNeighbors(rowIndex, colIndex)
+                        
+                        const hasForestOrLake = neighbors.includes('forest') || neighbors.includes('lake')
+                        const hasHouse = neighbors.includes('house')
+                        const hasSquare = neighbors.includes('square')
+                        
+                        // Jeśli sąsiaduje z domem lub placem → wynik podstawowy = 0
+                        if (hasHouse || hasSquare) {
+                            let penalty = 0
+                            const reasons: string[] = []
+                            
+                            // Za każdy DOM → -2 punkty
+                            const houseCount = neighbors.filter(n => n === 'house').length
+                            if (houseCount > 0) {
+                                penalty += houseCount * 2
+                                reasons.push(`${houseCount} dom${houseCount > 1 ? 'y' : ''} (-${houseCount * 2}pkt)`)
+                            }
+                            
+                            // Za każdy PLAC → -5 punktów
+                            const squareCount = neighbors.filter(n => n === 'square').length
+                            if (squareCount > 0) {
+                                penalty += squareCount * 5
+                                reasons.push(`${squareCount} plac${squareCount > 1 ? 'e' : ''} (-${squareCount * 5}pkt)`)
+                            }
+                            
+                            factoryBonus -= penalty
+                            factoryDetails.push({
+                                row: rowIndex,
+                                col: colIndex,
+                                points: -penalty,
+                                reason: `Sąsiedzi: ${reasons.join(', ')}`
+                            })
+                        } else if (hasForestOrLake) {
+                            // Sąsiaduje z lasem lub stawem → +10 punktów
+                            const types: string[] = []
+                            if (neighbors.includes('forest')) types.push('las')
+                            if (neighbors.includes('lake')) types.push('staw')
+                            
+                            factoryBonus += 10
+                            factoryDetails.push({
+                                row: rowIndex,
+                                col: colIndex,
+                                points: 10,
+                                reason: `Sąsiaduje z: ${types.join(' i ')}`
+                            })
+                        } else {
+                            factoryDetails.push({
+                                row: rowIndex,
+                                col: colIndex,
+                                points: 0,
+                                reason: 'Brak odpowiednich sąsiadów'
+                            })
+                        }
                     }
                 })
             })
 
+            // Zapisz bonusy do wyświetlenia
+            this.finalBonuses.squares = squareBonus
+            this.finalBonuses.factories = factoryBonus
+            this.finalBonuses.squareDetails = squareDetails
+            this.finalBonuses.factoryDetails = factoryDetails
             this.totalScore += factoryBonus + squareBonus
+            
+            console.log(`🏁 Punktowanie końcowe:`)
+            console.log(`   ⬜ Place: ${squareBonus >= 0 ? '+' : ''}${squareBonus} pkt (${squareDetails.length} placów)`)
+            console.log(`   🏭 Fabryki: ${factoryBonus >= 0 ? '+' : ''}${factoryBonus} pkt (${factoryDetails.length} fabryk)`)
+            console.log(`   📊 KOŃCOWY WYNIK: ${this.totalScore} pkt`)
         },
 
         // NOWE: Użycie bonusu w rundzie 3, 6 lub 9
@@ -924,6 +1144,10 @@ export const useGameStore = defineStore('game', {
 
         isPlanning: (state: GameState): boolean => {
             return state.currentRound === 0
+        },
+
+        isScoring: (state: GameState): boolean => {
+            return state.currentPhase === 'scoring'
         },
 
         canRollDice: (state: GameState): boolean => {

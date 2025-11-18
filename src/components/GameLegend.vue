@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { CellType } from '@/stores/GameStore'
 
-// ZMIANA: Dodano props dla wybranego projektu, dostępnych projektów i disabled
+// Props for selected project, available projects, and disabled state
 const props = defineProps<{
   selectedProject: CellType | null
   availableProjects: CellType[]
-  disabled: boolean // NOWE: Blokada legendy
+  disabled: boolean // Legend blocking
   usedBonusProjects?: Set<CellType>
 }>()
 
@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: 'select-project', projectType: CellType): void
 }>()
 
-// Funkcja sprawdzająca czy projekt jest dostępny
+// Function checking if project is available
 const isAvailable = (projectType: CellType): boolean => {
   return props.availableProjects.includes(projectType)
 }
@@ -23,7 +23,7 @@ const isAvailable = (projectType: CellType): boolean => {
   <div class="legend" :class="{ disabled: props.disabled }">
     <h3>Legenda (kliknij aby wybrać)</h3>
 
-    <!-- ZMIANA: Interaktywne elementy legendy -->
+    <!-- Interactive legend elements -->
     <div
       class="legend-item"
       :class="{
@@ -76,7 +76,7 @@ const isAvailable = (projectType: CellType): boolean => {
       <span>Plac (dublet)</span>
     </div>
 
-    <!-- NOWY: Fabryka -->
+    <!-- Factory project -->
     <div
       class="legend-item"
       :class="{

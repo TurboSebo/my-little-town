@@ -1,16 +1,16 @@
 <script setup lang="ts">
-// ZMIANA: Dodano props isPlanning
+// Added isPlanning prop
 const props = defineProps<{
   currentRound: number
   totalScore: number
-  isPlanning: boolean // NOWE
+  isPlanning: boolean
 }>()
 </script>
 
 <template>
   <div class="info-section">
     <h2>Moje Miasteczko</h2>
-    <!-- ZMIANA: Wyświetlanie fazy planowania lub rundy -->
+    <!-- Display planning phase or round number -->
     <p v-if="props.isPlanning">Faza planowania</p>
     <p v-else>Runda: {{ props.currentRound }} / 9</p>
     <p>Punkty: {{ props.totalScore }}</p>

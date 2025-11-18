@@ -7,6 +7,7 @@ import GameLegend from './GameLegend.vue'
 import BoardGrid from './BoardGrid.vue'
 import RoundScores from './RoundScores.vue'
 import GameStartModal from './GameStartModal.vue'
+import GameEndModal from './GameEndModal.vue'
 
 /* ============================================
    DEFINICJE TYPÓW I INTERFEJSÓW
@@ -59,7 +60,8 @@ const currentRound = computed(() => game.currentRound)
 const totalScore = computed(() => game.totalScore)
 const diceSum = computed(() => game.diceSum)
 const isPlanning = computed(() => game.isPlanning)
-const isBonus = computed(() => game.currentPhase === 'bonus') // NOWE
+const isBonus = computed(() => game.currentPhase === 'bonus')
+const isScoring = computed(() => game.isScoring) // End-game scoring phase
 const canProceed = computed(() => game.canProceedToNextRound)
 const canEnterBonus = computed(() => game.canEnterBonus) // PUNKT 16
 const selectedProject = computed(() => game.selectedProject)
@@ -69,6 +71,7 @@ const usedBonusRounds = computed(() => game.usedBonusRounds)
 const canRollDice = computed(() => game.canRollDice)
 const changesCommitted = computed(() => game.changesCommitted)
 const diceRolledThisRound = computed(() => game.diceRolledThisRound) // NOWE
+const finalBonuses = computed(() => game.finalBonuses) // NOWE: Bonusy końcowe
 
 /* ============================================
   FUNKCJE - LOGIKA GRY
@@ -147,6 +150,12 @@ const selectProject = (projectType: CellType) => {
   game.selectProject(projectType)
 }
 
+// NOWE: Restart gry
+const restartGame = () => {
+  game.restartGame()
+  showStartModal.value = false
+}
+
 /* ============================================
    INICJALIZACJA
    ============================================ */
@@ -157,6 +166,15 @@ const selectProject = (projectType: CellType) => {
 <template>
   <!-- NOWY: Modal startowy na środku ekranu -->
   <GameStartModal v-if="showStartModal" @start-game="startGame" />
+
+  <!-- NOWY: Modal końca gry -->
+  <GameEndModal
+    v-else-if="isScoring"
+    :total-score="totalScore"
+    :round-scores="roundScores"
+    :final-bonuses="finalBonuses"
+    @restart="restartGame"
+  />
 
   <!-- Główny kontener gry -->
   <div v-else class="game-container">
