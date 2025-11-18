@@ -205,58 +205,61 @@ const restartGame = () => {
         :can-enter-bonus="canEnterBonus"
         :needs-row-selection="needsRowSelection"
       />
-
-      <!-- ZMIANA: Wyświetlaj legendę zawsze -->
-      <GameLegend
-        :selected-project="selectedProject"
-        :available-projects="game.availableProjects"
-        @select-project="selectProject"
-        :disabled="changesCommitted"
-        :used-bonus-projects="game.usedBonusProjects"
-      />
-
-      <!-- ZMIANA: Wyświetlaj przyciski akcji zawsze -->
-      <div class="action-buttons">
-        <button @click="saveChanges" class="btn-save" :disabled="tempChanges.length === 0">
-          Zapisz zmiany
-        </button>
-        <button @click="clearChanges" class="btn-clear" :disabled="tempChanges.length === 0">
-          Usuń wszystkie
-        </button>
-      </div>
     </div>
 
     <!-- PLANSZA GRY (PRAWA STRONA) -->
     <div class="board-container">
-      <div class="board">
-        <BoardGrid
-          :board="board"
-          :dice1="dice1"
-          :dice2="dice2"
-          :dice-sum="diceSum"
-          :row-labels="rowLabels"
-          :row-points="rowPoints"
-          :temp-changes="tempChanges"
-          :allowed-primary="game.allowedColumns.primary"
-          :allowed-alt="game.allowedColumns.alt"
-          :any-for-square="game.allowedColumns.anyForSquare"
-          :is-planning="isPlanning"
-          :is-bonus="isBonus"
-          :selected-project="selectedProject"
-          :is-changes-committed="changesCommitted"
-          :needs-row-selection="needsRowSelection"
-          :selected-row-index="selectedRowIndex"
-          @cell-click="handleCellClick"
-          @row-click="handleRowClick"
-        />
+      <div class="board-layout">
+        <div class="board">
+          <BoardGrid
+            :board="board"
+            :dice1="dice1"
+            :dice2="dice2"
+            :dice-sum="diceSum"
+            :row-labels="rowLabels"
+            :row-points="rowPoints"
+            :temp-changes="tempChanges"
+            :allowed-primary="game.allowedColumns.primary"
+            :allowed-alt="game.allowedColumns.alt"
+            :any-for-square="game.allowedColumns.anyForSquare"
+            :is-planning="isPlanning"
+            :is-bonus="isBonus"
+            :selected-project="selectedProject"
+            :is-changes-committed="changesCommitted"
+            :needs-row-selection="needsRowSelection"
+            :selected-row-index="selectedRowIndex"
+            @cell-click="handleCellClick"
+            @row-click="handleRowClick"
+          />
 
-        <!-- ZMIANA: Wyświetlaj RoundScores zawsze -->
-        <RoundScores
-          :round-scores="roundScores"
-          :current-round="currentRound"
-          :used-bonus-rounds="usedBonusRounds"
-          :is-planning="isPlanning"
-        />
+          <!-- ZMIANA: Wyświetlaj RoundScores zawsze -->
+          <RoundScores
+            :round-scores="roundScores"
+            :current-round="currentRound"
+            :used-bonus-rounds="usedBonusRounds"
+            :is-planning="isPlanning"
+          />
+        </div>
+
+        <!-- PRAWY PANEL: Legenda + przyciski akcji -->
+        <aside class="right-panel">
+          <GameLegend
+            :selected-project="selectedProject"
+            :available-projects="game.availableProjects"
+            @select-project="selectProject"
+            :disabled="changesCommitted"
+            :used-bonus-projects="game.usedBonusProjects"
+          />
+
+          <div class="action-buttons">
+            <button @click="saveChanges" class="btn-save" :disabled="tempChanges.length === 0">
+              Zapisz zmiany
+            </button>
+            <button @click="clearChanges" class="btn-clear" :disabled="tempChanges.length === 0">
+              Usuń wszystkie
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
   </div>
