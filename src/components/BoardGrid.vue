@@ -25,10 +25,13 @@ const props = defineProps<{
   isBonus: boolean // Are we in bonus phase
   selectedProject: CellType | null // Selected project (Point 13)
   isChangesCommitted: boolean
+  needsRowSelection: boolean // Sum is 2 or 12, needs manual row selection
+  selectedRowIndex: number | null // Selected row when sum is 2 or 12
 }>()
 
 const emit = defineEmits<{
   (e: 'cell-click', row: number, col: number): void
+  (e: 'row-click', rowIndex: number): void
 }>()
 
 const getRowIndexFromSum = (sum: number): number => {
@@ -94,7 +97,15 @@ const isColumnAllowed = (col: number): boolean => {
 
   <!-- Wiersze planszy -->
   <div v-for="(row, rowIndex) in props.board" :key="`row-${rowIndex}`" class="board-row">
-    <div class="row-header" :class="{ highlight: activeRowIndex === rowIndex }">
+    <div 
+      class="row-header" 
+      :class="{ 
+        highlight: activeRowIndex === rowIndex,
+        selectable: props.needsRowSelection,
+        selected: props.needsRowSelection && props.selectedRowIndex === rowIndex
+      }"
+      @click="props.needsRowSelection && emit('row-click', rowIndex)"
+    >
       <span class="row-number">{{ props.rowLabels[rowIndex] }}</span>
       <span class="row-points">{{ props.rowPoints[rowIndex] }}p</span>
     </div>

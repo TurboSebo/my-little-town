@@ -72,6 +72,8 @@ const canRollDice = computed(() => game.canRollDice)
 const changesCommitted = computed(() => game.changesCommitted)
 const diceRolledThisRound = computed(() => game.diceRolledThisRound) // NOWE
 const finalBonuses = computed(() => game.finalBonuses) // NOWE: Bonusy końcowe
+const needsRowSelection = computed(() => game.needsRowSelection) // NOWE: Wybór wiersza dla sum 2/12
+const selectedRowIndex = computed(() => game.selectedRowIndex) // NOWE: Wybrany wiersz
 
 /* ============================================
   FUNKCJE - LOGIKA GRY
@@ -150,6 +152,11 @@ const selectProject = (projectType: CellType) => {
   game.selectProject(projectType)
 }
 
+// NOWE: Wybór wiersza (gdy suma 2 lub 12)
+const handleRowClick = (rowIndex: number) => {
+  game.selectRow(rowIndex)
+}
+
 // NOWE: Restart gry
 const restartGame = () => {
   game.restartGame()
@@ -196,6 +203,7 @@ const restartGame = () => {
         :is-planning="isPlanning"
         :is-bonus="isBonus"
         :can-enter-bonus="canEnterBonus"
+        :needs-row-selection="needsRowSelection"
       />
 
       <!-- ZMIANA: Wyświetlaj legendę zawsze -->
@@ -235,8 +243,11 @@ const restartGame = () => {
           :is-planning="isPlanning"
           :is-bonus="isBonus"
           :selected-project="selectedProject"
-          @cell-click="handleCellClick"
           :is-changes-committed="changesCommitted"
+          :needs-row-selection="needsRowSelection"
+          :selected-row-index="selectedRowIndex"
+          @cell-click="handleCellClick"
+          @row-click="handleRowClick"
         />
 
         <!-- ZMIANA: Wyświetlaj RoundScores zawsze -->

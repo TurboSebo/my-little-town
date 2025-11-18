@@ -19,6 +19,8 @@ export interface GameState {
     usedBonusProjects: Set<CellType>
     changesCommitted: boolean
     diceRolledThisRound: boolean
+    // Selected row index when sum is 2 or 12 (manual selection)
+    selectedRowIndex: number | null
     // End-game bonuses with detailed breakdown
     finalBonuses: {
         squares: number
@@ -59,6 +61,7 @@ export const useGameStore = defineStore('game', {
         usedBonusProjects: new Set(),
         changesCommitted: false,
         diceRolledThisRound: false,
+        selectedRowIndex: null,
         finalBonuses: {
             squares: 0,
             factories: 0,
@@ -93,6 +96,7 @@ export const useGameStore = defineStore('game', {
                 this.changesCommitted = false
                 this.tempChanges = []
                 this.selectedProject = null
+                this.selectedRowIndex = null
                 // NOWY: Potwierdzenie rzutu
                 console.log(`🎲 Rzucono kostkami: ${this.dice[0]} i ${this.dice[1]} (suma: ${this.diceSum})`)
             }
@@ -128,6 +132,7 @@ export const useGameStore = defineStore('game', {
             this.usedBonusProjects = new Set()
             this.changesCommitted = false
             this.diceRolledThisRound = false
+            this.selectedRowIndex = null
             this.finalBonuses = {
                 squares: 0,
                 factories: 0,
@@ -159,6 +164,7 @@ export const useGameStore = defineStore('game', {
                     this.tempChanges = []
                     this.placementsThisRound = 0
                     this.selectedProject = null
+                    this.selectedRowIndex = null
                     this.dice = [null, null]
                     console.log(`✅ Przeszedłeś do rundy ${this.currentRound}/${maxRounds}. Rzuć kostkami aby kontynuować.`)
                 } else {
@@ -188,6 +194,7 @@ export const useGameStore = defineStore('game', {
                 this.tempChanges = []
                 this.placementsThisRound = 0
                 this.selectedProject = null
+                this.selectedRowIndex = null
                 this.dice = [null, null]
                 console.log(`✅ Przeszedłeś do rundy ${this.currentRound}/${maxRounds}. Rzuć kostkami aby kontynuować.`)
             } else {
@@ -216,6 +223,27 @@ export const useGameStore = defineStore('game', {
 
             this.selectedProject = projectType
             console.log(`📍 Wybrałeś projekt: ${projectType}. Teraz kliknij na pole na planszy aby go postawić.`)
+        },
+
+        // NOWE: Wybór ulicy (wiersza) gdy suma wynosi 2 lub 12
+        selectRow(rowIndex: number) {
+            const sum = this.diceSum
+            if (sum !== 2 && sum !== 12) {
+                console.warn('⚠️ Wybór ulicy jest możliwy tylko gdy suma kostek wynosi 2 lub 12.')
+                return
+            }
+            if (rowIndex < 0 || rowIndex > 4) {
+                console.warn('⚠️ Nieprawidłowy numer wiersza.')
+                return
+            }
+            this.selectedRowIndex = rowIndex
+            console.log(`🛣️ Wybrano ulicę do punktowania: wiersz ${rowIndex} (${this.getRowLabel(rowIndex)})`)
+        },
+
+        // Helper: Pobierz etykietę wiersza
+        getRowLabel(rowIndex: number): string {
+            const labels = ['3,4', '5,6', '7', '8,9', '10,11']
+            return labels[rowIndex] || '?'
         },
 
         // NOWE: Umieszczenie projektu na planszy (tymczasowo)
@@ -416,11 +444,26 @@ export const useGameStore = defineStore('game', {
             
             // Mapowanie sumy kostek na indeks wiersza (punktowana ulica)
             let scoredRowIndex = -1
-            if (diceSum === 3 || diceSum === 4) scoredRowIndex = 0
-            else if (diceSum === 5 || diceSum === 6) scoredRowIndex = 1
-            else if (diceSum === 7) scoredRowIndex = 2
-            else if (diceSum === 8 || diceSum === 9) scoredRowIndex = 3
-            else if (diceSum === 10 || diceSum === 11) scoredRowIndex = 4
+            
+            // NOWE: Jeśli suma = 2 lub 12, użyj wybranego wiersza przez gracza
+            if (diceSum === 2 || diceSum === 12) {
+                if (this.selectedRowIndex !== null) {
+                    scoredRowIndex = this.selectedRowIndex
+                    console.log(`🎯 Punktowany wiersz (wybór gracza przy sumie ${diceSum}): ${this.getRowLabel(scoredRowIndex)}`)
+                } else {
+                    console.warn('⚠️ Brak wybranego wiersza! Użyj standardowej logiki.')
+                    // Fallback do standardowej logiki
+                    if (diceSum === 2) scoredRowIndex = 0 // Domyślnie pierwsze ulice
+                    else scoredRowIndex = 4 // Domyślnie ostatnie ulice
+                }
+            } else {
+                // Standardowa logika mapowania
+                if (diceSum === 3 || diceSum === 4) scoredRowIndex = 0
+                else if (diceSum === 5 || diceSum === 6) scoredRowIndex = 1
+                else if (diceSum === 7) scoredRowIndex = 2
+                else if (diceSum === 8 || diceSum === 9) scoredRowIndex = 3
+                else if (diceSum === 10 || diceSum === 11) scoredRowIndex = 4
+            }
 
             if (scoredRowIndex === -1) return
 
@@ -1156,6 +1199,12 @@ export const useGameStore = defineStore('game', {
                 return false
             }
             return !state.diceRolledThisRound && !state.changesCommitted
+        },
+
+        // NOWE: Czy gracz musi wybrać wiersz (suma 2 lub 12)
+        needsRowSelection: (state: GameState): boolean => {
+            const sum = state.dice[0] !== null && state.dice[1] !== null ? state.dice[0] + state.dice[1] : 0
+            return (sum === 2 || sum === 12) && state.currentPhase === 'building' && state.diceRolledThisRound
         },
 
         availableProjects: (state: GameState): CellType[] => {

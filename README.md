@@ -45,6 +45,14 @@ Each row corresponds to specific dice sums:
 - Row 4: dice sum 8 or 9 (1 point)
 - Row 5: dice sum 10 or 11 (3 points)
 
+**Special Case - Manual Row Selection:**
+When dice sum equals **2 (1+1)** or **12 (6+6)**:
+- Player must **manually select** which row to score
+- Click on any row header (`{3,4}`, `{5,6}`, `{7}`, `{8,9}`, `{10,11}`) to choose
+- Visual feedback: selected row header turns blue
+- Hint message appears: "👆 Kliknij na nagłówek wiersza aby wybrać ulicę do punktowania!"
+- Scoring uses the manually selected row instead of automatic mapping
+
 ### Round Flow
 
 #### 1. Planning Phase (Round 0)
@@ -54,15 +62,19 @@ Each row corresponds to specific dice sums:
 
 #### 2. Building Phase (Rounds 1-9)
 1. **Roll Dice**: Click "Rzuć kostkami" (Roll Dice)
-2. **Place Projects**: 
+2. **Select Row** (if sum = 2 or 12):
+   - Visual hint appears prompting row selection
+   - Click on desired row header to choose scoring row
+   - Selected row highlights in blue
+3. **Place Projects**: 
    - Select project type from legend
    - Click on valid cells to place temporarily
    - Primary column = dice value (e.g., dice shows 4 → column 4)
    - Alternative columns = adjacent columns (3, 5) if primary is full
-3. **Save/Clear**: 
+4. **Save/Clear**: 
    - "Zapisz zmiany" (Save Changes) - commits placements
    - "Wyczyść zmiany" (Clear Changes) - removes temporary placements
-4. **Next Round**: Click "Następna runda" (Next Round) when ready
+5. **Next Round**: Click "Następna runda" (Next Round) when ready
 
 #### 3. Bonus Phase (Rounds 3, 6, 9)
 - After completing rounds 3, 6, or 9
@@ -165,6 +177,7 @@ FINAL SCORE: 98 points
 - ✅ **Dice Rolling System**: Two 6-sided dice with sum calculation
 - ✅ **5×6 Game Board**: Row/column headers with visual highlights
 - ✅ **Row-Column Mapping**: Dice sum determines valid placement rows
+- ✅ **Manual Row Selection**: When sum = 2 or 12, player chooses scoring row
 - ✅ **Project Placement**: Houses (1,4), Forests (2,5), Lakes (3,6)
 - ✅ **Temporary Changes**: Preview placements before committing
 - ✅ **Phase Management**: Planning → Building → Bonus → Scoring
@@ -199,8 +212,11 @@ FINAL SCORE: 98 points
 - ✅ **Visual Feedback**: 
   - Yellow glow for active row/column
   - Purple glow for alternative columns
+  - Blue highlight for selectable/selected rows (sum 2/12)
   - Green highlights for valid placements
   - Red for blocked cells
+- ✅ **Interactive Row Headers**: Clickable when sum = 2 or 12
+- ✅ **Contextual Hints**: Animated message for row selection
 - ✅ **Responsive Design**: Mobile-friendly layouts
 - ✅ **Animations**: Slide-up modals, pulse effects, fade-ins
 - ✅ **Scrollable Details**: Custom scrollbar for long score lists
@@ -403,7 +419,9 @@ Component Re-render (reactive data)
 
 **calculateRoundScore() logic**:
 ```typescript
-1. Determine scored row from dice sum
+1. Determine scored row:
+   - If sum = 2 or 12: Use selectedRowIndex (manual choice)
+   - Otherwise: Map dice sum to row (3-4→0, 5-6→1, 7→2, 8-9→3, 10-11→4)
 2. For each occupied cell in scored row:
    3. Skip if already grouped
    4. Start BFS from cell:
@@ -416,6 +434,18 @@ Component Re-render (reactive data)
    5. Add group total to round score
 6. Store round score in array
 7. Update total score
+```
+
+**Row Selection for Sum 2/12**:
+```typescript
+1. User rolls dice → sum = 2 or 12
+2. needsRowSelection getter returns true
+3. UI shows hint: "Kliknij na nagłówek wiersza..."
+4. Row headers become clickable (blue border)
+5. User clicks row header → selectRow(rowIndex)
+6. selectedRowIndex state updated
+7. Selected row highlights in blue
+8. Scoring uses selectedRowIndex instead of automatic mapping
 ```
 
 ### Alternative Column System
@@ -493,6 +523,7 @@ import './assets/board.css'  // Board-specific styles
   players: Player[]
   totalScore: number
   selectedProject: CellType | null
+  selectedRowIndex: number | null   // For manual row selection when dice sum = 2 or 12
   tempChanges: Array<{row, col, type}>
   roundScores: number[9]
   usedBonusRounds: Set<number>

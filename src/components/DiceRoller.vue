@@ -10,6 +10,7 @@ const props = defineProps<{
   isPlanning: boolean // Are we in planning phase
   isBonus: boolean // Are we in bonus phase
   canEnterBonus: boolean // Point 16: Can enter bonus phase
+  needsRowSelection: boolean // Sum is 2 or 12, needs row selection
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +27,11 @@ const emit = defineEmits<{
       <div class="dice">{{ props.dice2 ?? '?' }}</div>
     </div>
     <p class="dice-sum">Suma: {{ props.diceSum > 0 ? props.diceSum : '?' }}</p>
+    
+    <!-- Message when row selection needed -->
+    <p v-if="props.needsRowSelection" class="row-selection-hint">
+      👆 Kliknij na nagłówek wiersza aby wybrać ulicę do punktowania!
+    </p>
     <!-- Block roll button if already rolled or changes saved -->
     <button
       class="btn-roll"

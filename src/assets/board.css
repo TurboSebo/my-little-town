@@ -66,6 +66,28 @@
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
 }
 
+/* Row selection for sum 2 or 12 */
+.row-header.selectable {
+  cursor: pointer;
+  border: 2px solid #2196f3;
+  background: #e3f2fd;
+}
+
+.row-header.selectable:hover {
+  background: #bbdefb;
+  transform: scale(1.05);
+}
+
+.row-header.selected {
+  background: #2196f3;
+  color: white;
+  box-shadow: 0 0 12px rgba(33, 150, 243, 0.8);
+}
+
+.row-header.selected .row-points {
+  color: white;
+}
+
 .row-number {
   font-size: 1rem;
 }
